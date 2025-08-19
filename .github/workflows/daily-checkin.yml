@@ -1,0 +1,33 @@
+name: 掘金自动签到
+
+on:
+  schedule:
+    # 每天北京时间早上 9 点执行（UTC 时间 1:00）
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      
+    - name: 设置 Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: 安装依赖
+      run: npm install
+      
+    - name: 创建 auth.json
+      run: echo '${{ secrets.AUTH_JSON }}' > auth.json
+      
+    - name: 执行签到
+      run: node main.js
+      
+    - name: 删除 auth.json
+      if: always()
+      run: rm -f auth.json
