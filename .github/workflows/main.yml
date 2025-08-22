@@ -34,7 +34,7 @@ jobs:
       # 5. 从 Secret 创建 auth.json 文件
       - name: Create auth.json from Secret
         env:
-          JUEJIN_AUTH_JSON: ${{ secrets.JUEJIN_AUTH_JSON }}
+          JUEJIN_AUTH_JSON: ${{ secrets.AUTH_JSON  }}
         run: echo "$JUEJIN_AUTH_JSON" > auth.json
 
       # 6. 运行主脚本
