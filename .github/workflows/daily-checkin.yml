@@ -3,7 +3,7 @@ name: 掘金自动签到
 on:
   schedule:
     # 每天北京时间早上 9 点执行（UTC 时间 0:00）
-    - cron: '0 0 * * *'
+    - cron: '0 1 * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:
