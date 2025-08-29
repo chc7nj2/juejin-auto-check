@@ -2,55 +2,51 @@ name: Juejin Auto Check-in (Node.js)
 
 on:
   schedule:
-    - cron: '0 1 * * *' # UTC 1:00 = 北京时间 9:00
+    # 每天北京时间上午9:00执行 (UTC 时间是 1:00)
+    - cron: '0 1 * * *'
+  # 允许手动触发
   workflow_dispatch:
 
 jobs:
   checkin:
     runs-on: ubuntu-latest
-    retries: 1 # 任务失败时重试1次（可选）
+
     steps:
+      # 1. 检出代码
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. 设置 Node.js 环境
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm' # 缓存依赖，加速安装（可选）
+          node-version: '18' # 使用一个LTS版本
 
+      # 3. 安装项目依赖
       - name: Install dependencies
         run: npm install
-        retries: 2
 
+      # 4. 安装 Playwright 浏览器驱动
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
-        env:
-          PLAYWRIGHT_DOWNLOAD_TIMEOUT: 60000
-        retries: 2
 
-      # 修复1：用 printf 生成 auth.json，避免格式损坏
+      # 5. 从 Secret 创建 auth.json 文件
       - name: Create auth.json from Secret
         env:
-          AUTH_JSON: ${{ secrets.AUTH_JSON }}
-        run: |
-          printf "%s" "$AUTH_JSON" > auth.json
-          echo "=== 验证 auth.json ==="
-          cat auth.json
-          echo -e "\n=== JSON 格式检查 ==="
-          jq . auth.json 2>&1 || (echo "ERROR: auth.json 格式无效！" && exit 1)
+          AUTH_JSON: ${{ secrets.AUTH_JSON  }}
+        run: echo "$AUTH_JSON" > auth.json
 
-      # 修复2：移除 DISPLAY，强制无头模式，增加调试日志
+      # 6. 运行主脚本
       - name: Run Playwright script
         run: node main.js
         env:
-          PLAYWRIGHT_HEADLESS: "true"
-          DEBUG: "playwright:browser,playwright:context" # 只输出关键调试日志
-
+          # 设置显示环境变量
+          DISPLAY: :98
+          
+      # 7. 上传调试截图（如果失败）
       - name: Upload screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: debug-screenshots
           path: "*.png"
-          retention-days: 3 # 截图保留3天，避免占用空间
