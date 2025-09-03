@@ -3,7 +3,7 @@ name: Juejin Auto Check-in (Node.js)
 on:
   schedule:
     # 每天北京时间上午9:00执行 (UTC 时间是 1:00)
-    - cron: '0 0 * * *'
+    - cron: '30 0 * * *'
   # 允许手动触发
   workflow_dispatch:
 
