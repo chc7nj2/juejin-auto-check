@@ -36,14 +36,28 @@ jobs:
           AUTH_JSON: ${{ secrets.AUTH_JSON  }}
         run: echo "$AUTH_JSON" > auth.json
 
-      # 6. 运行主脚本
+      # 6. 从 Secret 创建 config.json 文件（如果配置了通知）
+      - name: Create config.json from Secret
+        if: ${{ secrets.CONFIG_JSON != '' }}
+        env:
+          CONFIG_JSON: ${{ secrets.CONFIG_JSON }}
+        run: echo "$CONFIG_JSON" > config.json
+
+      # 7. 运行主脚本
       - name: Run Playwright script
         run: node main.js
         env:
           # 设置显示环境变量
           DISPLAY: :99
+
+      # 8. 清理敏感文件
+      - name: Clean up sensitive files
+        if: always()
+        run: |
+          rm -f auth.json
+          rm -f config.json
           
-      # 7. 上传调试截图（如果失败）
+      # 9. 上传调试截图（如果失败）
       - name: Upload screenshots
         if: failure()
         uses: actions/upload-artifact@v4

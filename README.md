@@ -7,6 +7,7 @@
 -   自动进行每日签到。
 -   自动进行每日免费抽奖。
 -   通过保存登录状态，避免每次运行时都重新登录。
+-   **支持PushPlus消息推送通知**，实时获取签到和抽奖结果。
 
 ## 工作原理
 
@@ -41,7 +42,33 @@ node setupAuth.js
 
 **注意**：请务必保管好 `auth.json` 文件，不要泄露给他人，因为它包含了你的登录凭证。
 
-### 4. 运行主程序
+### 4. (可选) 配置消息推送通知
+
+如果你希望接收签到和抽奖结果的实时通知，可以配置PushPlus推送服务：
+
+1. **注册PushPlus账号**
+   - 访问 [PushPlus官网](https://www.pushplus.plus/)
+   - 关注微信公众号"pushplus推送加"
+   - 获取你的专属token
+
+2. **配置通知**
+   编辑项目根目录下的 `config.json` 文件：
+   ```json
+   {
+     "pushplus": {
+       "token": "你的PushPlus token",
+       "enabled": true,
+       "template": "txt"
+     }
+   }
+   ```
+
+   参数说明：
+   - `token`: 你的PushPlus专属token（必填）
+   - `enabled`: 是否启用通知功能（true/false）
+   - `template`: 消息模板类型（txt/html/json/markdown）
+
+### 5. 运行主程序
 
 完成以上步骤后，你就可以运行主脚本来自动执行签到和抽奖了：
 
@@ -49,9 +76,12 @@ node setupAuth.js
 node main.js
 ```
 
-脚本会自动完成操作并输出日志。
+脚本会自动完成操作并输出日志。如果配置了PushPlus通知，你还会收到以下类型的推送消息：
+- 签到成功/失败通知
+- 抽奖结果通知  
+- 每日任务汇总报告
 
-### 5. (可选) 使用 GitHub Actions 设置定时任务
+### 6. (可选) 使用 GitHub Actions 设置定时任务
 
 为了实现每日自动运行，你可以使用 GitHub Actions 来定时执行签到任务。
 
@@ -65,6 +95,7 @@ node main.js
    - 点击 `Settings` → `Secrets and variables` → `Actions`
    - 点击 `New repository secret`
    - 创建一个名为 `AUTH_JSON` 的 secret，将你本地 `auth.json` 文件的内容复制粘贴进去
+   - (可选) 如果要启用通知，创建一个名为 `CONFIG_JSON` 的 secret，将你的 `config.json` 文件内容复制粘贴进去
 
 3. **创建 GitHub Actions 工作流**
    在项目根目录创建 `.github/workflows/daily-checkin.yml` 文件：
@@ -97,12 +128,18 @@ jobs:
     - name: 创建 auth.json
       run: echo '${{ secrets.AUTH_JSON }}' > auth.json
       
+    - name: 创建 config.json (如果配置了通知)
+      if: ${{ secrets.CONFIG_JSON != '' }}
+      run: echo '${{ secrets.CONFIG_JSON }}' > config.json
+      
     - name: 执行签到
       run: node main.js
       
-    - name: 删除 auth.json
+    - name: 清理文件
       if: always()
-      run: rm -f auth.json
+      run: |
+        rm -f auth.json
+        rm -f config.json
 ```
 
 4. **测试运行**
@@ -118,6 +155,8 @@ jobs:
 
 -   `main.js`: 自动签到和抽奖的主脚本。
 -   `setupAuth.js`: 用于生成 `auth.json` 登录凭证文件的脚本。
+-   `notification.js`: PushPlus消息推送通知模块。
+-   `config.json`: 配置文件，包含PushPlus通知设置。
 -   `package.json`: Node.js 项目配置文件，包含了项目依赖等信息。
 -   `auth.json`: (自动生成) 保存用户登录状态的文件。**请勿将此文件提交到公共代码库。**
 -   `.gitignore`: Git 配置文件，已默认忽略 `node_modules` 和 `auth.json`。
@@ -126,3 +165,8 @@ jobs:
 
 -   如果脚本运行失败，可以尝试重新运行 `node setupAuth.js` 来更新登录凭证。
 -   网站的页面结构可能会发生变化，导致脚本失效。如果遇到问题，可能需要根据最新的页面结构更新 `main.js` 中的选择器。
+-   **关于PushPlus通知**：
+  - PushPlus是免费的消息推送服务，但有一定的使用限制
+  - 请妥善保管你的PushPlus token，不要泄露给他人
+  - 如果不需要通知功能，可以将 `config.json` 中的 `enabled` 设置为 `false`
+  - 通知功能支持多种消息模板格式（txt、html、json、markdown）
