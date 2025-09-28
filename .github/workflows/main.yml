@@ -38,7 +38,6 @@ jobs:
 
       # 6. 从 Secret 创建 config.json 文件（如果配置了通知）
       - name: Create config.json from Secret
-        if: ${{ secrets.CONFIG_JSON }}
         env:
           CONFIG_JSON: ${{ secrets.CONFIG_JSON }}
         run: echo "$CONFIG_JSON" > config.json
